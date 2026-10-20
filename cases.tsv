@@ -1,0 +1,12 @@
+wc1	word_count_report	Count the characters, words, and lines of this text: The quick brown fox jumps over the lazy dog.
+wc2	word_count_report	How long is this passage? Tell me its size statistics: hello world
+wc3	word_count_report	Can you tell me how many characters are in 'hello there'?
+tr1	reverse_report	Reverse this string: abcdefg
+tr2	reverse_report	Flip the following text backwards: Hello, World!
+tr3	reverse_report	I want to see 'racecar' written in mirror order.
+b64_1	b64_report	Encode this text as base64: hello
+b64_2	b64_report	Convert the string 'Agent Test 123' into base64 format.
+b64_3	b64_report	Give me the base64 of: Termux rocks
+neg1	NONE	What is the capital of France?
+neg2	NONE	Write a haiku about rain.
+neg3	NONE	Summarize this in one sentence: The sky is blue and the sun is warm.
