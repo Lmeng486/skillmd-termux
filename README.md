@@ -59,6 +59,8 @@ token-budget attribution, and the "smaller quant + bigger budget" conclusion —
 lives in the companion report:
 [Quantization Decay, Measured](https://github.com/Lmeng486/awesome-termux-mcp/blob/main/docs/QUANT-DECAY-MINICPM5.md).
 
+The upstream discussion thread for those numbers — raw tables, the maintainer-facing summary, and follow-ups — is [OpenBMB/MiniCPM#388](https://github.com/OpenBMB/MiniCPM/issues/388).
+
 ## Why one file, zero dependencies
 
 Same design rule as nano-mcp-termux: on a phone, install friction is the enemy.
