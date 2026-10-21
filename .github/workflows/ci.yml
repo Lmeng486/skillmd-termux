@@ -1,0 +1,27 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: skillmd verify (POSIX sh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        run: sh -n skillmd.sh
+      - name: Frontmatter verify
+        run: sh skillmd.sh verify
+      - name: Catalog renders
+        run: sh skillmd.sh catalog | head -5
+      - name: List skills
+        run: sh skillmd.sh list
+      - name: Count
+        run: sh skillmd.sh count
+      - name: Round-trip call (base64-encode)
+        run: printf '%s\n' '<function name="base64-encode">' '<param name="text">hello</param>' '</function>' | sh skillmd.sh call

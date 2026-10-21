@@ -1,4 +1,6 @@
 # skillmd.sh — a single-file SKILL.md loader for Termux
+[![CI](https://github.com/Lmeng486/skillmd-termux/actions/workflows/ci.yml/badge.svg)](https://github.com/Lmeng486/skillmd-termux/actions/workflows/ci.yml)
+
 
 One POSIX-sh file, zero dependencies (`sh` + `awk`/`sed`/`grep` only), that loads
 [SKILL.md](https://agentskills.io) skills into any OpenAI-compatible chat endpoint
