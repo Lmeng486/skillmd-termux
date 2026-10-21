@@ -63,10 +63,53 @@ lives in the companion report:
 
 The upstream discussion thread for those numbers — raw tables, the maintainer-facing summary, and follow-ups — is [OpenBMB/MiniCPM#388](https://github.com/OpenBMB/MiniCPM/issues/388).
 
+## Parser fix in v1.0.1
+
+The original `parse_calls` regex matched param values with `[^<]*`, which made two
+classes of *valid* model output fail:
+
+1. **A `<` inside a value was fatal.** `<param name="text">if a < b then</param>`
+   rejected the entire block (exit 1), because `[^<]*` cannot cross the `<`.
+2. **Multi-line values broke the line protocol.** A value spanning lines emitted
+   `PARAM body=line1` followed by a bare `line2`, so downstream consumers could not
+   tell where the record ended.
+
+Both are fixed by scanning for the `<param name="…">` open tag and then using
+`index()` to find its matching `</param>`, instead of matching the value with a
+character class. Values containing `<`, `>`, or full HTML tags now pass through
+verbatim; multi-line values are escaped (`\n`, `\r`, `\\`) so every `PARAM` stays
+exactly one line. The whole-block rejection rule is unchanged: a block is still
+discarded if the parsed param count does not match the attempted count.
+
+### Backward compatibility, proven on real data
+
+The fix was regression-tested against **118 raw model outputs** captured by
+`run_tests.sh` during the quantization measurements (Q4_K_M, Q4_V512, Q8_K_M runs
+plus the mixed `all_outs` set). Old and new parsers were run over all 118 files and
+compared byte-for-byte on stdout, exit code, and line count:
+
+```
+samples: 118
+OLD: success(exit=0)=65  fail(exit=1)=53
+NEW: success(exit=0)=65  fail(exit=1)=53
+diff old.txt new.txt  →  no output (zero differences)
+```
+
+So the published numbers did not move: **no captured output contained a `<function`
+block that the `<` bug was rejecting** (0 such cases were found). The fix is a
+strictly additive widening — it accepts inputs that were previously rejected, and
+changes nothing that already worked. The measured 65/53 split, and therefore every
+trigger/parse rate in the companion report, stands as published.
+
+`tests/parser_test.sh` pins this behaviour with 19 cases (happy path, `<`/`>`/HTML/
+backslash/multi-line values, and the rejection paths) and runs in CI. Run against
+the previous parser, 4 of the 19 fail (`extra ws in attrs`, `lt in value`,
+`html tag in value`, `multiline value`); all 19 pass after the fix.
+
 ## Why one file, zero dependencies
 
 Same design rule as nano-mcp-termux: on a phone, install friction is the enemy.
-`sh` + `awk` are already in every Termux install; a 158-line file can be read
+`sh` + `awk` are already in every Termux install; a 177-line file can be read
 in one sitting, audited, and pasted anywhere — including into an `adb shell`.
 
 ## Note

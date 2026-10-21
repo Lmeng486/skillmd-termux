@@ -93,20 +93,39 @@ parse_calls() {
         sub(/^.*name="/, "", fn)
         sub(/".*$/, "", fn)
         if (fn == "") next
-        body = $0
+        body = substr($0, RSTART + RLENGTH)
         out = "FUNC " fn "\n"
         nparsed = 0
-        while (match(body, /<param[ \t]+name="[^"]*">[^<]*<\/param>/)) {
-          p = substr(body, RSTART, RLENGTH)
-          k = p; sub(/^.*name="/, "", k); sub(/".*$/, "", k)
-          v = p; sub(/^[^>]*>/, "", v); sub(/<\/param>[ \t]*$/, "", v)
+        while (match(body, /<param[ \t]+name="[^"]*"[ \t]*>/)) {
+          tag  = substr(body, RSTART, RLENGTH)
+          rest = substr(body, RSTART + RLENGTH)
+          close_at = index(rest, "</param>")
+          if (close_at == 0) break
+          k = tag; sub(/^.*name="/, "", k); sub(/".*$/, "", k)
+          v = substr(rest, 1, close_at - 1)
+          # Single-line values pass through verbatim (byte-stable).
+          # Multi-line values are escaped so the one-line PARAM protocol holds.
+          if (index(v, "\n") > 0) {
+            esc = ""
+            for (i = 1; i <= length(v); i++) {
+              c = substr(v, i, 1)
+              if      (c == "\\") esc = esc "\\\\"
+              else if (c == "\n") esc = esc "\\n"
+              else if (c == "\r") esc = esc "\\r"
+              else                esc = esc c
+            }
+            v = esc
+          }
           out = out "PARAM " k "=" v "\n"
           nparsed++
-          body = substr(body, RSTART + RLENGTH)
+          body = substr(rest, close_at + 8)
         }
-        # count attempted params; any mismatch => malformed block, reject whole
-        attempted = 0; tmp = $0
-        while (match(tmp, /<param/)) { attempted++; tmp = substr(tmp, RSTART + RLENGTH) }
+        # count attempted params: parsed + any param tags left in the unconsumed
+        # remainder. Counting only the remainder avoids miscounting a literal
+        # "<param" that appears *inside* an already-parsed value.
+        # Any mismatch => malformed block, reject whole.
+        attempted = nparsed; tmp = body
+        while (match(tmp, /<param[ \t>\/]/)) { attempted++; tmp = substr(tmp, RSTART + RLENGTH) }
         if (attempted != nparsed) next
         printf "%s", out
         found = 1
